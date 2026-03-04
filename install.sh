@@ -2,7 +2,7 @@
 set -euo pipefail
 
 APP_NAME="Boba Factory Installer"
-APP_VERSION="2.2.0"
+APP_VERSION="2.3.0"
 
 REPO_URL_DEFAULT="https://github.com/BobaDev-Factory/boba-factory.git"
 TARGET_ROOT_DEFAULT="$HOME/.openclaw/workspace"
@@ -45,26 +45,30 @@ ok()   { echo -e "${C_GREEN}✓ $1${C_RESET}"; }
 warn() { echo -e "${C_YELLOW}⚠ $1${C_RESET}"; }
 err()  { echo -e "${C_RED}✗ $1${C_RESET}"; }
 
-prompt() {
+ask() {
   local var_name="$1"; shift
+  local icon="$1"; shift
   local label="$1"; shift
   local default_value="${1:-}"
   local value
+  echo
   if [[ -n "$default_value" ]]; then
-    read -r -p "$label [$default_value]: " value
+    read -r -p "${icon} ${label} [${default_value}]: " value
     value="${value:-$default_value}"
   else
-    read -r -p "$label: " value
+    read -r -p "${icon} ${label}: " value
   fi
   printf -v "$var_name" '%s' "$value"
 }
 
-prompt_secret() {
+ask_secret() {
   local var_name="$1"; shift
+  local icon="$1"; shift
   local label="$1"; shift
   local value
-  echo -e "${C_DIM}(saisie masquée — aucun caractère affiché)${C_RESET}"
-  read -r -s -p "$label: " value
+  echo
+  echo -e "${C_DIM}   (masked input — no visible characters)${C_RESET}"
+  read -r -s -p "${icon} ${label}: " value
   echo
   printf -v "$var_name" '%s' "$value"
 }
@@ -83,15 +87,15 @@ bootstrap_repo_if_needed() {
 
   step "Bootstrap repository"
   if [[ ! -d "$target_repo/.git" ]]; then
-    info "Clone vers: $target_repo"
+    info "Clone target: $target_repo"
     git clone "$repo_url" "$target_repo"
   else
-    info "Repo déjà présent: $target_repo"
-    info "Mise à jour locale"
-    git -C "$target_repo" pull --ff-only || warn "Impossible de pull (continuation locale)"
+    info "Repository already present: $target_repo"
+    info "Updating local copy"
+    git -C "$target_repo" pull --ff-only || warn "Pull failed, continuing with local state"
   fi
 
-  info "Relance de l'install depuis le repo cible"
+  info "Re-launching installer from target repository"
   exec "$target_repo/install.sh" --in-repo "$@"
 }
 
@@ -115,20 +119,22 @@ mkdir -p "$CONFIG_DIR"
 
 banner
 step "Configuration"
+info "Fill the fields below. Press Enter to keep defaults."
 
 DEFAULT_WORKSPACE="$HOME/.openclaw/workspace"
-prompt WORKSPACE_PATH "OpenClaw workspace path" "$DEFAULT_WORKSPACE"
-prompt BF_OWNER_NAME "Nom humain (owner Boba Factory)" "BobaMaster"
-prompt BF_MAIN_AGENT_NAME "Nom de l'agent principal" "Boba"
-prompt JIRA_BASE_URL "Jira base URL (sans slash final)" "https://bobacloud.atlassian.net"
-prompt JIRA_PROJECT_KEY "Jira project key" "BDF"
-prompt GITHUB_ORG "GitHub organization" "BobaDev-Factory"
-prompt GITHUB_TOKEN_MODE "GitHub token source (gh|env|none)" "gh"
-prompt JIRA_EMAIL "Jira email/login (optionnel)" ""
-prompt_secret JIRA_TOKEN "Jira token (optionnel, masqué)"
-prompt_secret GITHUB_PAT "GitHub PAT (optionnel, masqué)"
+ask WORKSPACE_PATH "📁" "OpenClaw workspace path" "$DEFAULT_WORKSPACE"
+ask BF_OWNER_NAME "👤" "Owner display name" "BobaMaster"
+ask BF_MAIN_AGENT_NAME "🤖" "Main agent name" "Boba"
+ask JIRA_BASE_URL "🧩" "Jira base URL (no trailing slash)" "https://bobacloud.atlassian.net"
+ask JIRA_PROJECT_KEY "🎫" "Jira project key" "BDF"
+ask GITHUB_ORG "🐙" "GitHub organization" "BobaDev-Factory"
+ask GITHUB_TOKEN_MODE "🔐" "GitHub token source (gh|env|none)" "gh"
+ask JIRA_EMAIL "📮" "Jira email/login (optional)" ""
+ask_secret JIRA_TOKEN "🔑" "Jira token (optional)"
+ask_secret GITHUB_PAT "🗝️" "GitHub PAT (optional)"
 
-step "Apply configuration"
+echo
+step "Applying configuration"
 mkdir -p "$WORKSPACE_PATH"
 AGENTS_FILE="$WORKSPACE_PATH/AGENTS.md"
 BOOT_PATH="$REPO_ROOT/BOOT.md"
@@ -200,7 +206,9 @@ else
 fi
 
 echo
-ok "Installation terminée"
-info "Config: $CONFIG_FILE"
-info "BOOT updated: $BOOT_PATH"
-info "AGENTS pointer: $AGENTS_FILE"
+ok "Installation completed"
+echo -e "${C_BOLD}Summary${C_RESET}"
+info "Config file:      $CONFIG_FILE"
+info "BOOT updated:     $BOOT_PATH"
+info "AGENTS pointer:   $AGENTS_FILE"
+info "Projects root:    $REPO_ROOT/projects"

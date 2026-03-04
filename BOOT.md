@@ -56,13 +56,13 @@ Règles:
 Lire les docs nécessaires à l’orchestration:
 1. Reports
    - `docs/reports/STATUS.md` (si présent)
-   - `docs/reports/CHANGELOG-OPERATIONS.md` (si présent)
 2. Process
    - `docs/process/MULTI_AGENT_OPERATING_MODEL.md` (si présent)
    - `docs/process/AGENT_DELIVERABLE_CONTRACT.md` (si présent)
    - `docs/process/AGENT_CATALOG.md` (si présent)
+   - `docs/process/QUALITY_GATES.md` (si présent)
 3. Runbooks
-   - `docs/runbooks/OPENCLAW_BOOTSTRAP.md` (si présent)
+   - `docs/runbooks/SESSION_RECOVERY.md` (si présent)
 
 Si un fichier est absent: continuer et le signaler en S8.
 

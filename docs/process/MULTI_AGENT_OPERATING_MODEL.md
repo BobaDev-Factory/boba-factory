@@ -22,3 +22,9 @@ Mode is stored in project `ACTIVE_CONTEXT` and can be changed explicitly by the 
 
 ## Browser test policy
 UI-impacting work must include browser-level validation (manual or automated) in addition to API/unit checks.
+
+## Specs policy linkage
+- Project specs are not stored in Boba Factory.
+- Startup must load selected project `SPEC_LIGHT.md`.
+- Full specs remain in project repositories and are loaded on-demand.
+- Reference: `docs/process/SPECS_POLICY.md`.

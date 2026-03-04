@@ -68,6 +68,17 @@ Then the boot process handles:
 
 ---
 
+## Specs model (required)
+
+For each project, keep specs in two layers:
+
+1. Light spec (startup scope):
+   - `projects/<ProjectName>/.boba/specs/SPEC_LIGHT.md`
+2. Full specs (delivery scope):
+   - inside project repositories (`docs/specs/*`)
+
+Boba Factory must not store project-specific full specs.
+
 ## Recommended structure
 
 ```txt

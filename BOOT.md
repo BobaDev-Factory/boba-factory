@@ -15,6 +15,9 @@ Mission Boba Factory : industrialiser la livraison logicielle (spec, code, revie
 
 - `boba-factory` contient uniquement le framework/process.
 - Les infos projet (tickets, specs, rapports, runbooks métier) restent dans les repos projet.
+- Les spécifications projet doivent être isolées en:
+  - `SPEC_LIGHT.md` par projet pour la reprise session
+  - specs complètes dans les repos projet (jamais dans `boba-factory`).
 
 ## Convention `projects/`
 
@@ -63,6 +66,8 @@ Lire les docs nécessaires à l’orchestration:
    - `docs/process/QUALITY_GATES.md` (si présent)
 3. Runbooks
    - `docs/runbooks/SESSION_RECOVERY.md` (si présent)
+4. Project light spec (selected project)
+   - `projects/<ProjectName>/.boba/specs/SPEC_LIGHT.md` (si présent)
 
 Si un fichier est absent: continuer et le signaler en S8.
 
@@ -127,8 +132,9 @@ Format:
 Toujours faire:
 1. update report projet (pas global), ex: `projects/<ProjectName>/.boba/reports/SESSION_LOG.md`
 2. append changelog projet (pas `docs/reports/PROCESS_CHANGES.md`)
-3. lister 3 prochaines actions exécutables
-4. libérer lock de contexte projet (`projects/<ProjectName>/.boba/LOCK`)
+3. mettre à jour `projects/<ProjectName>/.boba/specs/SPEC_LIGHT.md` si scope/décisions/AC ont changé
+4. lister 3 prochaines actions exécutables
+5. libérer lock de contexte projet (`projects/<ProjectName>/.boba/LOCK`)
 
 Notes:
 - `docs/reports/STATUS.md` et `docs/reports/PROCESS_CHANGES.md` sont réservés aux évolutions du framework Boba Factory.

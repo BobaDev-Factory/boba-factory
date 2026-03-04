@@ -85,9 +85,38 @@ prompt BF_MAIN_AGENT_NAME "Nom de l'agent principal" "Boba"
 prompt JIRA_BASE_URL "Jira base URL (sans slash final)" "https://bobacloud.atlassian.net"
 prompt JIRA_PROJECT_KEY "Jira project key" "BDF"
 prompt GITHUB_ORG "GitHub organization" "BobaDev-Factory"
-prompt GITHUB_TOKEN_MODE "GitHub token source (gh|env|none)" "gh"
 prompt JIRA_EMAIL "Jira email/login (optionnel)" ""
-prompt_secret JIRA_TOKEN "Jira token (optionnel, masqué)"
+
+JIRA_TOKEN_FILE_DEFAULT="$HOME/.jiraToken"
+GITHUB_PAT_FILE_DEFAULT="$HOME/.openclaw/credentials/github_pat_token"
+prompt JIRA_TOKEN_FILE "Chemin fichier token Jira" "$JIRA_TOKEN_FILE_DEFAULT"
+prompt GITHUB_PAT_FILE "Chemin fichier token GitHub PAT" "$GITHUB_PAT_FILE_DEFAULT"
+
+if [[ -f "$JIRA_TOKEN_FILE" ]]; then
+  read -r -p "Token Jira déjà trouvé dans $JIRA_TOKEN_FILE. Le réutiliser ? [Y/n]: " reuse_jira
+  reuse_jira="${reuse_jira:-Y}"
+else
+  reuse_jira="n"
+fi
+
+if [[ "$reuse_jira" =~ ^[Yy]$ ]]; then
+  JIRA_TOKEN="$(cat "$JIRA_TOKEN_FILE")"
+else
+  prompt_secret JIRA_TOKEN "Jira token (masqué)"
+fi
+
+if [[ -f "$GITHUB_PAT_FILE" ]]; then
+  read -r -p "Token GitHub PAT déjà trouvé dans $GITHUB_PAT_FILE. Le réutiliser ? [Y/n]: " reuse_gh
+  reuse_gh="${reuse_gh:-Y}"
+else
+  reuse_gh="n"
+fi
+
+if [[ "$reuse_gh" =~ ^[Yy]$ ]]; then
+  GITHUB_PAT="$(cat "$GITHUB_PAT_FILE")"
+else
+  prompt_secret GITHUB_PAT "GitHub PAT (optionnel, masqué)"
+fi
 
 mkdir -p "$WORKSPACE_PATH"
 AGENTS_FILE="$WORKSPACE_PATH/AGENTS.md"
@@ -100,12 +129,21 @@ BF_MAIN_AGENT_NAME=$BF_MAIN_AGENT_NAME
 JIRA_BASE_URL=$JIRA_BASE_URL
 JIRA_PROJECT_KEY=$JIRA_PROJECT_KEY
 JIRA_EMAIL=$JIRA_EMAIL
-JIRA_TOKEN=$JIRA_TOKEN
+JIRA_TOKEN_FILE=$JIRA_TOKEN_FILE
+GITHUB_PAT_FILE=$GITHUB_PAT_FILE
 GITHUB_ORG=$GITHUB_ORG
-GITHUB_TOKEN_MODE=$GITHUB_TOKEN_MODE
 WORKSPACE_PATH=$WORKSPACE_PATH
 CFG
 chmod 600 "$CONFIG_FILE"
+
+# Persist tokens using legacy-compatible locations
+mkdir -p "$(dirname "$JIRA_TOKEN_FILE")" "$(dirname "$GITHUB_PAT_FILE")"
+printf '%s' "$JIRA_TOKEN" > "$JIRA_TOKEN_FILE"
+chmod 600 "$JIRA_TOKEN_FILE"
+if [[ -n "${GITHUB_PAT:-}" ]]; then
+  printf '%s' "$GITHUB_PAT" > "$GITHUB_PAT_FILE"
+  chmod 600 "$GITHUB_PAT_FILE"
+fi
 
 # Ensure config/projects are gitignored
 GITIGNORE_FILE="$REPO_ROOT/.gitignore"
@@ -180,6 +218,8 @@ echo "Install complete"
 echo "- Config: $CONFIG_FILE"
 echo "- BOOT updated: $BOOT_PATH"
 echo "- AGENTS pointer ensured: $AGENTS_FILE"
+echo "- Jira token file: $JIRA_TOKEN_FILE"
+echo "- GitHub PAT file: $GITHUB_PAT_FILE"
 echo
 echo "Standalone usage (from anywhere):"
 echo "  bash <(curl -fsSL https://raw.githubusercontent.com/BobaDev-Factory/boba-factory/main/install.sh)"

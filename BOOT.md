@@ -2,9 +2,9 @@
 
 <!-- BOBA_FACTORY:GENERATED:START -->
 - Owner: **BobaMaster**
-- Main agent: **Boba**
+- Main agent: **Jarvis**
 - GitHub org: `BobaDev-Factory`
-- Jira: `https://bobacloud.atlassian.net` (project `BDF`)
+- Jira: `https://bobacloud.atlassian.net` (project `BF`)
 <!-- BOBA_FACTORY:GENERATED:END -->
 
 Ce fichier est la source unique de process pour les sessions Boba Factory.
@@ -25,6 +25,9 @@ Mission Boba Factory : industrialiser la livraison logicielle (spec, code, revie
 - État local par projet (non versionné):
   - `projects/<ProjectName>/.boba/ACTIVE_CONTEXT.json`
   - `projects/<ProjectName>/.boba/LOCK`
+  - `projects/<ProjectName>/.boba/active-tasks.json`
+  - `projects/<ProjectName>/.boba/proposed-tasks.json`
+  - `projects/<ProjectName>/.boba/cron.json`
 
 ---
 
@@ -64,6 +67,7 @@ Lire les docs nécessaires à l’orchestration:
    - `docs/process/AGENT_DELIVERABLE_CONTRACT.md` (si présent)
    - `docs/process/AGENT_CATALOG.md` (si présent)
    - `docs/process/QUALITY_GATES.md` (si présent)
+   - `docs/process/RUNTIME_AUTOMATION.md` (si présent)
 3. Runbooks
    - `docs/runbooks/SESSION_RECOVERY.md` (si présent)
 4. Project light spec (selected project)
@@ -91,6 +95,8 @@ La non-connectivité n’arrête pas la reprise:
 - marquer `degraded`
 - inclure l’état dans le résumé S7/S8
 
+Vérifier aussi le statut cron OpenClaw si activé (`projects/<ProjectName>/.boba/cron.json`).
+
 ### S7 — Résumé opérationnel court
 Publier un résumé compact:
 - projet sélectionné
@@ -111,6 +117,39 @@ Si un point critique échoue:
 
 ---
 
+
+### S9 — Charger le runtime des agents
+Lire/initialiser:
+- `projects/<ProjectName>/.boba/active-tasks.json`
+- `projects/<ProjectName>/.boba/proposed-tasks.json`
+
+Classifier l’état runtime:
+- `running`
+- `blocked`
+- `ready_for_review`
+- `stale`
+
+### S10 — Exécuter les checks automatiques
+Lancer les checks déterministes:
+- `scripts/check-agents.sh`
+- `scripts/check-dod.sh`
+
+Produire un état:
+- `ready_to_merge`
+- `needs_retry`
+- `needs_human`
+
+### S11 — Décider la prochaine action immédiate
+Après S10, l’orchestrateur doit déclencher une action explicite:
+- spawn next agent
+- retry intelligent
+- notification humaine
+
+Interdit de finir la reprise sans `next_action` explicite.
+
+---
+
+
 ## Format de réponse obligatoire après reprise
 
 Après exécution complète de S1→S8, ne pas afficher tout le contexte chargé.
@@ -122,8 +161,8 @@ Répondre uniquement avec:
 
 Format:
 - `Reprise OK: <project/repo/sprint/mode>`
-- `Dernière tâche: <résumé court>`
-- `Prochaine étape: <étape pipeline>`
+- `État agents: <running | blocked | ready>`
+- `Prochaine étape: <action unique>`
 
 ---
 

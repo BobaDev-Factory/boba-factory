@@ -49,7 +49,9 @@ The installer will:
 3. generate `config/local.env` (local only, gitignored)
 4. inject runtime metadata at the top of `BOOT.md`
 5. inject a Boba Factory pointer block into `~/.openclaw/workspace/AGENTS.md`
-6. initialize baseline git protections (`.gitignore`, hooks when configured)
+6. initialize project runtime files (`ACTIVE_CONTEXT`, lock, task registries, SPEC_LIGHT)
+7. optionally create an OpenClaw cron monitor job (visible in OpenClaw UI)
+8. initialize baseline git protections (`.gitignore`, hooks when configured)
 
 ---
 
@@ -94,7 +96,12 @@ Boba Factory must not store project-specific full specs.
         .boba/
           ACTIVE_CONTEXT.json
           LOCK
+          active-tasks.json
+          proposed-tasks.json
+          cron.json
           reports/
+          specs/
+            SPEC_LIGHT.md
 ```
 
 - `projects/` is tracked as a folder, but its content is ignored

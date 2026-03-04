@@ -1,2 +1,12 @@
 projects/*
 !projects/.gitkeep
+config/*
+!config/.gitkeep
+projects/*/.boba/ACTIVE_CONTEXT.json
+projects/*/.boba/LOCK
+projects/*/.boba/active-tasks.json
+projects/*/.boba/proposed-tasks.json
+projects/*/.boba/cron.json
+projects/*/.boba/logs/*
+projects/*/.boba/reports/*
+projects/*/.boba/specs/SPEC_LIGHT.md

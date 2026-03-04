@@ -2,7 +2,7 @@
 set -euo pipefail
 
 APP_NAME="Boba Factory Installer"
-APP_VERSION="2.3.0"
+APP_VERSION="2.4.0"
 
 REPO_URL_DEFAULT="https://github.com/BobaDev-Factory/boba-factory.git"
 TARGET_ROOT_DEFAULT="$HOME/.openclaw/workspace"
@@ -59,6 +59,24 @@ ask() {
     read -r -p "${icon} ${label}: " value
   fi
   printf -v "$var_name" '%s' "$value"
+}
+
+ask_yes_no() {
+  local var_name="$1"; shift
+  local icon="$1"; shift
+  local label="$1"; shift
+  local default_value="${1:-y}"
+  local answer
+  local hint="Y/n"
+  [[ "$default_value" =~ ^[Nn]$ ]] && hint="y/N"
+  echo
+  read -r -p "${icon} ${label} [${hint}]: " answer
+  answer="${answer:-$default_value}"
+  if [[ "$answer" =~ ^[Yy]$ ]]; then
+    printf -v "$var_name" '%s' "y"
+  else
+    printf -v "$var_name" '%s' "n"
+  fi
 }
 
 ask_secret() {
@@ -130,6 +148,9 @@ ask JIRA_PROJECT_KEY "🎫" "Jira project key" "BDF"
 ask GITHUB_ORG "🐙" "GitHub organization" "BobaDev-Factory"
 ask GITHUB_TOKEN_MODE "🔐" "GitHub token source (gh|env|none)" "gh"
 ask JIRA_EMAIL "📮" "Jira email/login (optional)" ""
+ask PROJECT_NAME "🧱" "Default project name for runtime setup" "Rynade"
+ask CRON_EXPR "⏱️" "OpenClaw cron expression" "*/10 * * * *"
+ask_yes_no ENABLE_OPENCLAW_CRON "🛰️" "Create OpenClaw cron monitor job for this project" "y"
 ask_secret JIRA_TOKEN "🔑" "Jira token (optional)"
 ask_secret GITHUB_PAT "🗝️" "GitHub PAT (optional)"
 
@@ -151,16 +172,57 @@ GITHUB_PAT=$GITHUB_PAT
 GITHUB_ORG=$GITHUB_ORG
 GITHUB_TOKEN_MODE=$GITHUB_TOKEN_MODE
 WORKSPACE_PATH=$WORKSPACE_PATH
+PROJECT_NAME=$PROJECT_NAME
+CRON_EXPR=$CRON_EXPR
 CFG
 chmod 600 "$CONFIG_FILE"
 
 GITIGNORE_FILE="$REPO_ROOT/.gitignore"
 touch "$GITIGNORE_FILE"
-for line in "config/*" "!config/.gitkeep" "projects/*" "!projects/.gitkeep" "projects/*/.boba/ACTIVE_CONTEXT.json" "projects/*/.boba/LOCK"; do
+for line in "config/*" "!config/.gitkeep" "projects/*" "!projects/.gitkeep" "projects/*/.boba/ACTIVE_CONTEXT.json" "projects/*/.boba/LOCK" "projects/*/.boba/active-tasks.json" "projects/*/.boba/proposed-tasks.json" "projects/*/.boba/cron.json"; do
   grep -qxF "$line" "$GITIGNORE_FILE" || echo "$line" >> "$GITIGNORE_FILE"
 done
 mkdir -p "$REPO_ROOT/projects"
 touch "$REPO_ROOT/projects/.gitkeep" "$REPO_ROOT/config/.gitkeep"
+
+
+PROJECT_DIR="$REPO_ROOT/projects/$PROJECT_NAME"
+mkdir -p "$PROJECT_DIR/.boba/specs" "$PROJECT_DIR/.boba/reports" "$PROJECT_DIR/.boba/logs"
+
+ACTIVE_CONTEXT_FILE="$PROJECT_DIR/.boba/ACTIVE_CONTEXT.json"
+if [[ ! -f "$ACTIVE_CONTEXT_FILE" ]]; then
+  cat > "$ACTIVE_CONTEXT_FILE" <<JSON
+{
+  "project": "$PROJECT_NAME",
+  "repo": "",
+  "sprint": "",
+  "current_ticket": "",
+  "execution_mode": "step_confirm",
+  "last_updated_at": "$(date -u +%FT%TZ)"
+}
+JSON
+fi
+
+if [[ ! -f "$PROJECT_DIR/.boba/specs/SPEC_LIGHT.md" ]]; then
+  cat > "$PROJECT_DIR/.boba/specs/SPEC_LIGHT.md" <<'MD'
+# SPEC_LIGHT
+
+## Current objective
+- 
+
+## Active scope
+- 
+
+## Acceptance criteria (summary)
+- 
+
+## Open decisions
+- 
+MD
+fi
+
+[[ -f "$PROJECT_DIR/.boba/active-tasks.json" ]] || echo '{"tasks":[]}' > "$PROJECT_DIR/.boba/active-tasks.json"
+[[ -f "$PROJECT_DIR/.boba/proposed-tasks.json" ]] || echo '{"tasks":[]}' > "$PROJECT_DIR/.boba/proposed-tasks.json"
 
 BOOT_BEGIN="<!-- BOBA_FACTORY:GENERATED:START -->"
 BOOT_END="<!-- BOBA_FACTORY:GENERATED:END -->"
@@ -205,6 +267,37 @@ else
   printf "\n%s\n" "$POINTER_FULL" >> "$AGENTS_FILE"
 fi
 
+
+CRON_SETUP_STATUS="disabled"
+CRON_JOB_ID=""
+if [[ "$ENABLE_OPENCLAW_CRON" == "y" ]]; then
+  if command -v openclaw >/dev/null 2>&1; then
+    step "OpenClaw cron setup"
+    CRON_NAME="BF monitor - $PROJECT_NAME"
+    MONITOR_MSG="Run boba-factory monitor for project $PROJECT_NAME. Report only blocked/ready states."
+    set +e
+    cron_add_out=$(openclaw cron add --name "$CRON_NAME" --cron "$CRON_EXPR" --session isolated --message "$MONITOR_MSG" --announce 2>&1)
+    rc=$?
+    set -e
+    if [[ $rc -eq 0 ]]; then
+      CRON_SETUP_STATUS="enabled"
+      CRON_JOB_ID=$(printf '%s' "$cron_add_out" | grep -Eo '[0-9a-fA-F-]{8,}' | head -n1 || true)
+      echo "$cron_add_out" > "$PROJECT_DIR/.boba/cron-add.log"
+      cat > "$PROJECT_DIR/.boba/cron.json" <<JSON
+{"enabled":true,"name":"$CRON_NAME","expr":"$CRON_EXPR","jobId":"$CRON_JOB_ID"}
+JSON
+      ok "OpenClaw cron job created"
+    else
+      CRON_SETUP_STATUS="failed"
+      warn "OpenClaw cron add failed (see $PROJECT_DIR/.boba/cron-add.log)"
+      echo "$cron_add_out" > "$PROJECT_DIR/.boba/cron-add.log"
+    fi
+  else
+    CRON_SETUP_STATUS="missing_openclaw_cli"
+    warn "openclaw CLI not found; cron job not created"
+  fi
+fi
+
 echo
 ok "Installation completed"
 echo -e "${C_BOLD}Summary${C_RESET}"
@@ -212,3 +305,5 @@ info "Config file:      $CONFIG_FILE"
 info "BOOT updated:     $BOOT_PATH"
 info "AGENTS pointer:   $AGENTS_FILE"
 info "Projects root:    $REPO_ROOT/projects"
+info "Project runtime:  $PROJECT_DIR/.boba"
+info "OpenClaw cron:    $CRON_SETUP_STATUS"

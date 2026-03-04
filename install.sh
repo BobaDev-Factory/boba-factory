@@ -1,7 +1,52 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_URL_DEFAULT="https://github.com/BobaDev-Factory/boba-factory.git"
+TARGET_ROOT_DEFAULT="$HOME/.openclaw"
+TARGET_REPO_DEFAULT="$TARGET_ROOT_DEFAULT/boba-factory"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+IN_REPO_MODE=0
+
+if [[ "${1:-}" == "--in-repo" ]]; then
+  IN_REPO_MODE=1
+  shift
+fi
+
+bootstrap_repo_if_needed() {
+  local repo_url="${BOBA_FACTORY_REPO_URL:-$REPO_URL_DEFAULT}"
+  local target_root="${BOBA_FACTORY_HOME:-$TARGET_ROOT_DEFAULT}"
+  local target_repo="${BOBA_FACTORY_REPO_DIR:-$TARGET_REPO_DEFAULT}"
+
+  mkdir -p "$target_root"
+
+  if [[ ! -d "$target_repo/.git" ]]; then
+    echo "[bootstrap] Cloning boba-factory into: $target_repo"
+    git clone "$repo_url" "$target_repo"
+  else
+    echo "[bootstrap] boba-factory already present: $target_repo"
+    echo "[bootstrap] Updating local repo"
+    git -C "$target_repo" pull --ff-only || true
+  fi
+
+  echo "[bootstrap] Re-launch installer from cloned repo"
+  exec "$target_repo/install.sh" --in-repo "$@"
+}
+
+# Standalone mode: if script is run from anywhere, self-bootstrap then re-exec from ~/.openclaw/boba-factory
+if [[ "$IN_REPO_MODE" -eq 0 ]]; then
+  if [[ ! -f "$SCRIPT_DIR/BOOT.md" || ! -d "$SCRIPT_DIR/templates/workspace" ]]; then
+    bootstrap_repo_if_needed "$@"
+  fi
+
+  # Even if script is in a repo clone, normalize execution from target repo path.
+  TARGET_REPO="${BOBA_FACTORY_REPO_DIR:-$TARGET_REPO_DEFAULT}"
+  if [[ "$SCRIPT_DIR" != "$TARGET_REPO" ]]; then
+    bootstrap_repo_if_needed "$@"
+  fi
+fi
+
+REPO_ROOT="$SCRIPT_DIR"
 CONFIG_DIR="$REPO_ROOT/config"
 CONFIG_FILE="$CONFIG_DIR/local.env"
 TEMPLATES_DIR="$REPO_ROOT/templates/workspace"
@@ -62,7 +107,7 @@ WORKSPACE_PATH=$WORKSPACE_PATH
 CFG
 chmod 600 "$CONFIG_FILE"
 
-# Ensure config is gitignored
+# Ensure config/projects are gitignored
 GITIGNORE_FILE="$REPO_ROOT/.gitignore"
 touch "$GITIGNORE_FILE"
 for line in "config/*" "!config/.gitkeep" "projects/*" "!projects/.gitkeep"; do
@@ -135,3 +180,6 @@ echo "Install complete"
 echo "- Config: $CONFIG_FILE"
 echo "- BOOT updated: $BOOT_PATH"
 echo "- AGENTS pointer ensured: $AGENTS_FILE"
+echo
+echo "Standalone usage (from anywhere):"
+echo "  bash <(curl -fsSL https://raw.githubusercontent.com/BobaDev-Factory/boba-factory/main/install.sh)"

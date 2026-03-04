@@ -9,11 +9,12 @@ This document defines the automation layer inspired by high-throughput orchestra
 - `projects/<ProjectName>/.boba/logs/cron-monitor.jsonl`
 
 ## Implemented components
-1. Monitoring loop (OpenClaw cron)
-2. Task registry (`active-tasks.json`)
-3. Deterministic checks (`check-agents.sh`, `check-dod.sh`)
-4. Retry decision hooks (status-driven)
-5. Notification trigger points (`ready_for_review`, `blocked`, `needs_human`)
+1. Project initializer (`scripts/new-project.sh`)
+2. Monitoring loop (OpenClaw cron)
+3. Task registry (`active-tasks.json`)
+4. Deterministic checks (`check-agents.sh`, `check-dod.sh`)
+5. Retry decision hooks (status-driven)
+6. Notification trigger points (`ready_for_review`, `blocked`, `needs_human`)
 
 ## DoD gate signals
 A task is considered ready only when explicit checks are true in registry:

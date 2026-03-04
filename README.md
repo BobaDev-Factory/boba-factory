@@ -55,6 +55,22 @@ The installer will:
 
 ---
 
+## New project initialization (one command)
+
+Use the built-in initializer when you start a brand-new project:
+
+```bash
+cd ~/.openclaw/workspace/boba-factory
+./scripts/new-project.sh MyNewProject --cron "*/10 * * * *"
+```
+
+What it does:
+- creates `projects/MyNewProject/.boba/*`
+- initializes `ACTIVE_CONTEXT.json`
+- creates `SPEC_LIGHT.md`
+- initializes task registries
+- creates an OpenClaw cron monitor job and stores metadata in `.boba/cron.json`
+
 ## Activation in an OpenClaw session
 
 In a new session, explicitly say:

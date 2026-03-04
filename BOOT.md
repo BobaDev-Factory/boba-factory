@@ -1,7 +1,7 @@
 # BOOT.md — Boba Factory v2.1 (Session Entrypoint)
 
 <!-- BOBA_FACTORY:GENERATED:START -->
-- Owner: **BobaMaster**
+- Owner: **Boba-Master**
 - Main agent: **Jarvis**
 - GitHub org: `BobaDev-Factory`
 - Jira: `https://bobacloud.atlassian.net` (project `BF`)
@@ -36,7 +36,8 @@ Mission Boba Factory : industrialiser la livraison logicielle (spec, code, revie
 ### S1 — Sélection du projet
 1. Lister les dossiers de `projects/`
 2. Demander à l’utilisateur quel projet continuer
-3. Basculer le contexte sur `projects/<ProjectName>/`
+3. Si le projet n’existe pas: exécuter `scripts/new-project.sh <ProjectName>` (init runtime + template + cron)
+4. Basculer le contexte sur `projects/<ProjectName>/`
 
 ### S2 — Charger le contexte actif projet
 Lire/initialiser `projects/<ProjectName>/.boba/ACTIVE_CONTEXT.json` avec au minimum:

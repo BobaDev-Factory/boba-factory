@@ -2,6 +2,12 @@
 
 Boba Factory est la base de refonte des process d'orchestration, multi-agents, gouvernance outils, et optimisation token.
 
+## Installation (one-liner)
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/BobaDev-Factory/boba-factory/main/install.sh)
+```
+
 ## Structure
 
 - `BOOT.md` : point d'entrée unique des sessions

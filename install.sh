@@ -88,7 +88,7 @@ ask_secret() {
   printf -v "$var_name" '%s' "$value"
 }
 
-print_summary_box() {
+print_summary() {
   local config_file="$1"
   local boot_path="$2"
   local agents_file="$3"
@@ -108,16 +108,14 @@ print_summary_box() {
 ASCII
   echo -e "${C_RESET}"
 
-  echo -e "${C_BOLD}+--------------------------------------------------------------------+${C_RESET}"
-  printf "| %-66s |\n" "Installation completed"
-  echo -e "${C_BOLD}+--------------------------------------------------------------------+${C_RESET}"
-  printf "| %-30s %-35s |\n" "Config file" "$config_file"
-  printf "| %-30s %-35s |\n" "BOOT updated" "$boot_path"
-  printf "| %-30s %-35s |\n" "AGENTS pointer" "$agents_file"
-  printf "| %-30s %-35s |\n" "Projects root" "$projects_root"
-  printf "| %-30s %-35s |\n" "Project runtime" "$runtime_dir"
-  printf "| %-30s %-35s |\n" "OpenClaw cron" "$cron_status"
-  echo -e "${C_BOLD}+--------------------------------------------------------------------+${C_RESET}"
+  echo -e "${C_BOLD}Summary${C_RESET}"
+  ok "Installation completed"
+  info "Config file:    $config_file"
+  info "BOOT updated:   $boot_path"
+  info "AGENTS pointer: $agents_file"
+  info "Projects root:  $projects_root"
+  info "Runtime dir:    $runtime_dir"
+  info "OpenClaw cron:  $cron_status"
 }
 
 if [[ "${1:-}" == "--in-repo" ]]; then
@@ -325,4 +323,4 @@ JSON
   fi
 fi
 
-print_summary_box "$CONFIG_FILE" "$BOOT_PATH" "$AGENTS_FILE" "$REPO_ROOT/projects" "$PROJECT_DIR/.boba" "$CRON_SETUP_STATUS"
+print_summary "$CONFIG_FILE" "$BOOT_PATH" "$AGENTS_FILE" "$REPO_ROOT/projects" "$PROJECT_DIR/.boba" "$CRON_SETUP_STATUS"

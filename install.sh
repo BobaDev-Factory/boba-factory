@@ -123,24 +123,10 @@ BOOT_BEGIN="<!-- BOBA_FACTORY:GENERATED:START -->"
 BOOT_END="<!-- BOBA_FACTORY:GENERATED:END -->"
 GENERATED_BOOT=$(cat <<EOB
 $BOOT_BEGIN
-## Installed configuration (generated)
-
 - Owner: **$BF_OWNER_NAME**
 - Main agent: **$BF_MAIN_AGENT_NAME**
-- GitHub org: \
-  \`$GITHUB_ORG\`
+- GitHub org: \`$GITHUB_ORG\`
 - Jira: \`$JIRA_BASE_URL\` (project \`$JIRA_PROJECT_KEY\`)
-
-## Agent routing baseline
-
-- Orchestrator ($BF_MAIN_AGENT_NAME): planning, gating, integration, final decision
-- Spec Agent (Atlas): scope + acceptance criteria
-- Code Agents (Forge-Backend / Forge-Frontend): implementation
-- Review Agent (Sentinel): bugs/security/perf/style
-- Test Agent (Pulse): lint/tests/typecheck/e2e evidence
-- Doc Agent (Scribe): docs/runbook/changelog
-
-Model policy is defined by BOOT.md runtime instructions and can be adjusted per mission.
 $BOOT_END
 EOB
 )

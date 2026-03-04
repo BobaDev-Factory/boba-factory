@@ -106,6 +106,36 @@ Si un point critique échoue:
 
 ---
 
+## Format de réponse obligatoire après reprise
+
+Après exécution complète de S1→S8, ne pas afficher tout le contexte chargé.
+Répondre uniquement avec:
+
+1. Confirmation: reprise exécutée correctement
+2. Résumé court de la dernière tâche connue
+3. Prochaine étape proposée conforme au process
+
+Format:
+- `Reprise OK: <project/repo/sprint/mode>`
+- `Dernière tâche: <résumé court>`
+- `Prochaine étape: <étape pipeline>`
+
+---
+
+## Clôture de session (obligatoire)
+
+Toujours faire:
+1. update report projet (pas global), ex: `projects/<ProjectName>/.boba/reports/SESSION_LOG.md`
+2. append changelog projet (pas `docs/reports/PROCESS_CHANGES.md`)
+3. lister 3 prochaines actions exécutables
+4. libérer lock de contexte projet (`projects/<ProjectName>/.boba/LOCK`)
+
+Notes:
+- `docs/reports/STATUS.md` et `docs/reports/PROCESS_CHANGES.md` sont réservés aux évolutions du framework Boba Factory.
+- Ils ne doivent pas être mis à jour pour l’exécution quotidienne d’un projet.
+
+---
+
 ## Règles Jira (non négociables)
 
 Transitions obligatoires en cours d’exécution:

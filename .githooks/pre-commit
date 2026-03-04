@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Block local secret config files from being committed
+blocked_files_regex='(^|/)config/local\.env$'
+if git diff --cached --name-only | grep -Eq "$blocked_files_regex"; then
+  echo "✗ Commit blocked: config/local.env must never be committed."
+  exit 1
+fi
+
+# Scan staged diff for common token patterns
+if git diff --cached -U0 | grep -Eiq \
+  'github_pat_[A-Za-z0-9_]{20,}|ghp_[A-Za-z0-9]{20,}|sk-[A-Za-z0-9_-]{20,}|AKIA[0-9A-Z]{16}|Authorization:[[:space:]]*Bearer[[:space:]]+[A-Za-z0-9._-]+'; then
+  echo "✗ Commit blocked: possible secret/token detected in staged changes."
+  echo "  Review your staged diff and remove sensitive data."
+  exit 1
+fi
+
+exit 0

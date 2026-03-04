@@ -2,7 +2,7 @@
 set -euo pipefail
 
 APP_NAME="Boba Factory Installer"
-APP_VERSION="2.4.0"
+APP_VERSION="2.5.0"
 
 REPO_URL_DEFAULT="https://github.com/BobaDev-Factory/boba-factory.git"
 TARGET_ROOT_DEFAULT="$HOME/.openclaw/workspace"
@@ -39,38 +39,36 @@ ASCII
   echo
 }
 
-step() { echo -e "${C_BLUE}${C_BOLD}▶${C_RESET} ${C_BOLD}$1${C_RESET}"; }
-info() { echo -e "${C_DIM}• $1${C_RESET}"; }
-ok()   { echo -e "${C_GREEN}✓ $1${C_RESET}"; }
-warn() { echo -e "${C_YELLOW}⚠ $1${C_RESET}"; }
-err()  { echo -e "${C_RED}✗ $1${C_RESET}"; }
+step() { echo -e "${C_BLUE}${C_BOLD}→${C_RESET} ${C_BOLD}$1${C_RESET}"; }
+info() { echo -e "${C_DIM}· $1${C_RESET}"; }
+ok()   { echo -e "${C_GREEN}●${C_RESET} $1"; }
+warn() { echo -e "${C_YELLOW}! $1${C_RESET}"; }
+err()  { echo -e "${C_RED}x $1${C_RESET}"; }
 
 ask() {
   local var_name="$1"; shift
-  local icon="$1"; shift
   local label="$1"; shift
   local default_value="${1:-}"
   local value
   echo
   if [[ -n "$default_value" ]]; then
-    read -r -p "${icon} ${label} [${default_value}]: " value
+    read -r -p "→ ${label} [${default_value}]: " value
     value="${value:-$default_value}"
   else
-    read -r -p "${icon} ${label}: " value
+    read -r -p "→ ${label}: " value
   fi
   printf -v "$var_name" '%s' "$value"
 }
 
 ask_yes_no() {
   local var_name="$1"; shift
-  local icon="$1"; shift
   local label="$1"; shift
   local default_value="${1:-y}"
   local answer
   local hint="Y/n"
   [[ "$default_value" =~ ^[Nn]$ ]] && hint="y/N"
   echo
-  read -r -p "${icon} ${label} [${hint}]: " answer
+  read -r -p "→ ${label} [${hint}]: " answer
   answer="${answer:-$default_value}"
   if [[ "$answer" =~ ^[Yy]$ ]]; then
     printf -v "$var_name" '%s' "y"
@@ -81,14 +79,45 @@ ask_yes_no() {
 
 ask_secret() {
   local var_name="$1"; shift
-  local icon="$1"; shift
   local label="$1"; shift
   local value
   echo
-  echo -e "${C_DIM}   (masked input — no visible characters)${C_RESET}"
-  read -r -s -p "${icon} ${label}: " value
+  echo -e "${C_DIM}  (masked input — no visible characters)${C_RESET}"
+  read -r -s -p "→ ${label}: " value
   echo
   printf -v "$var_name" '%s' "$value"
+}
+
+print_summary_box() {
+  local config_file="$1"
+  local boot_path="$2"
+  local agents_file="$3"
+  local projects_root="$4"
+  local runtime_dir="$5"
+  local cron_status="$6"
+
+  echo
+  echo -e "${C_GREEN}${C_BOLD}"
+  cat <<'ASCII'
+  ____                                
+ / ___| _   _ _ __ ___  _ __ ___   __ _ _ __ _   _
+ \___ \| | | | '_ ` _ \| '_ ` _ \ / _` | '__| | | |
+  ___) | |_| | | | | | | | | | | | (_| | |  | |_| |
+ |____/ \__,_|_| |_| |_|_| |_| |_|\__,_|_|   \__, |
+                                              |___/
+ASCII
+  echo -e "${C_RESET}"
+
+  echo -e "${C_BOLD}+--------------------------------------------------------------------+${C_RESET}"
+  printf "| %-66s |\n" "Installation completed"
+  echo -e "${C_BOLD}+--------------------------------------------------------------------+${C_RESET}"
+  printf "| %-30s %-35s |\n" "Config file" "$config_file"
+  printf "| %-30s %-35s |\n" "BOOT updated" "$boot_path"
+  printf "| %-30s %-35s |\n" "AGENTS pointer" "$agents_file"
+  printf "| %-30s %-35s |\n" "Projects root" "$projects_root"
+  printf "| %-30s %-35s |\n" "Project runtime" "$runtime_dir"
+  printf "| %-30s %-35s |\n" "OpenClaw cron" "$cron_status"
+  echo -e "${C_BOLD}+--------------------------------------------------------------------+${C_RESET}"
 }
 
 if [[ "${1:-}" == "--in-repo" ]]; then
@@ -140,19 +169,19 @@ step "Configuration"
 info "Fill the fields below. Press Enter to keep defaults."
 
 DEFAULT_WORKSPACE="$HOME/.openclaw/workspace"
-ask WORKSPACE_PATH "📁" "OpenClaw workspace path" "$DEFAULT_WORKSPACE"
-ask BF_OWNER_NAME "👤" "Owner display name" "BobaMaster"
-ask BF_MAIN_AGENT_NAME "🤖" "Main agent name" "Boba"
-ask JIRA_BASE_URL "🧩" "Jira base URL (no trailing slash)" "https://bobacloud.atlassian.net"
-ask JIRA_PROJECT_KEY "🎫" "Jira project key" "BDF"
-ask GITHUB_ORG "🐙" "GitHub organization" "BobaDev-Factory"
-ask GITHUB_TOKEN_MODE "🔐" "GitHub token source (gh|env|none)" "gh"
-ask JIRA_EMAIL "📮" "Jira email/login (optional)" ""
-ask PROJECT_NAME "🧱" "Default project name for runtime setup" "Rynade"
-ask CRON_EXPR "⏱️" "OpenClaw cron expression" "*/10 * * * *"
-ask_yes_no ENABLE_OPENCLAW_CRON "🛰️" "Create OpenClaw cron monitor job for this project" "y"
-ask_secret JIRA_TOKEN "🔑" "Jira token (optional)"
-ask_secret GITHUB_PAT "🗝️" "GitHub PAT (optional)"
+ask WORKSPACE_PATH "OpenClaw workspace path" "$DEFAULT_WORKSPACE"
+ask BF_OWNER_NAME "Owner display name" "BobaMaster"
+ask BF_MAIN_AGENT_NAME "Main agent name" "Boba"
+ask JIRA_BASE_URL "Jira base URL (no trailing slash)" "https://bobacloud.atlassian.net"
+ask JIRA_PROJECT_KEY "Jira project key" "BDF"
+ask GITHUB_ORG "GitHub organization" "BobaDev-Factory"
+ask GITHUB_TOKEN_MODE "GitHub token source (gh|env|none)" "gh"
+ask JIRA_EMAIL "Jira email/login (optional)" ""
+ask PROJECT_NAME "Default project name for runtime setup" "Rynade"
+ask CRON_EXPR "OpenClaw cron expression" "*/10 * * * *"
+ask_yes_no ENABLE_OPENCLAW_CRON "Create OpenClaw cron monitor job for this project" "y"
+ask_secret JIRA_TOKEN "Jira token (optional)"
+ask_secret GITHUB_PAT "GitHub PAT (optional)"
 
 echo
 step "Applying configuration"
@@ -184,7 +213,6 @@ for line in "config/*" "!config/.gitkeep" "projects/*" "!projects/.gitkeep" "pro
 done
 mkdir -p "$REPO_ROOT/projects"
 touch "$REPO_ROOT/projects/.gitkeep" "$REPO_ROOT/config/.gitkeep"
-
 
 PROJECT_DIR="$REPO_ROOT/projects/$PROJECT_NAME"
 mkdir -p "$PROJECT_DIR/.boba/specs" "$PROJECT_DIR/.boba/reports" "$PROJECT_DIR/.boba/logs"
@@ -267,7 +295,6 @@ else
   printf "\n%s\n" "$POINTER_FULL" >> "$AGENTS_FILE"
 fi
 
-
 CRON_SETUP_STATUS="disabled"
 CRON_JOB_ID=""
 if [[ "$ENABLE_OPENCLAW_CRON" == "y" ]]; then
@@ -298,12 +325,4 @@ JSON
   fi
 fi
 
-echo
-ok "Installation completed"
-echo -e "${C_BOLD}Summary${C_RESET}"
-info "Config file:      $CONFIG_FILE"
-info "BOOT updated:     $BOOT_PATH"
-info "AGENTS pointer:   $AGENTS_FILE"
-info "Projects root:    $REPO_ROOT/projects"
-info "Project runtime:  $PROJECT_DIR/.boba"
-info "OpenClaw cron:    $CRON_SETUP_STATUS"
+print_summary_box "$CONFIG_FILE" "$BOOT_PATH" "$AGENTS_FILE" "$REPO_ROOT/projects" "$PROJECT_DIR/.boba" "$CRON_SETUP_STATUS"

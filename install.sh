@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO_URL_DEFAULT="https://github.com/BobaDev-Factory/boba-factory.git"
-TARGET_ROOT_DEFAULT="$HOME/.openclaw"
+TARGET_ROOT_DEFAULT="$HOME/.openclaw/workspace"
 TARGET_REPO_DEFAULT="$TARGET_ROOT_DEFAULT/boba-factory"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -33,7 +33,7 @@ bootstrap_repo_if_needed() {
   exec "$target_repo/install.sh" --in-repo "$@"
 }
 
-# Standalone mode: if script is run from anywhere, self-bootstrap then re-exec from ~/.openclaw/boba-factory
+# Standalone mode: if script is run from anywhere, self-bootstrap then re-exec from ~/.openclaw/workspace/boba-factory
 if [[ "$IN_REPO_MODE" -eq 0 ]]; then
   if [[ ! -f "$SCRIPT_DIR/BOOT.md" || ! -d "$SCRIPT_DIR/templates/workspace" ]]; then
     bootstrap_repo_if_needed "$@"
@@ -112,7 +112,7 @@ chmod 600 "$CONFIG_FILE"
 # Ensure config/projects are gitignored
 GITIGNORE_FILE="$REPO_ROOT/.gitignore"
 touch "$GITIGNORE_FILE"
-for line in "config/*" "!config/.gitkeep" "projects/*" "!projects/.gitkeep"; do
+for line in "config/*" "!config/.gitkeep" "projects/*" "!projects/.gitkeep" "projects/*/.boba/ACTIVE_CONTEXT.json" "projects/*/.boba/LOCK"; do
   grep -qxF "$line" "$GITIGNORE_FILE" || echo "$line" >> "$GITIGNORE_FILE"
 done
 mkdir -p "$REPO_ROOT/projects"

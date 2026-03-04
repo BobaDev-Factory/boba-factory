@@ -1,74 +1,74 @@
 # Boba Factory
 
-Boba Factory est un **framework de delivery multi-agent** pour OpenClaw.
+Boba Factory is a **multi-agent delivery framework** for OpenClaw.
 
-Objectif: industrialiser la livraison logicielle (spec, code, review, tests, doc, CI/CD, runbooks, rollback) avec une discipline d’orchestration stricte, réutilisable sur plusieurs projets.
+Mission: industrialize software delivery (spec, code, review, testing, docs, CI/CD, runbooks, rollback) with strict orchestration discipline.
 
 ---
 
-## Ce que c’est (et ce que ce n’est pas)
+## What it is (and what it is not)
 
 ### ✅ Boba Factory
-- Un cadre de process pour orchestrer des agents (main + subagents)
-- Un point d’entrée session unique (`BOOT.md`)
-- Des règles de reprise, lock, contexte actif, qualité, gouvernance Jira/GitHub
-- Une structure multi-projet (`projects/<ProjectName>/...`)
+- A process framework for orchestrating a main agent + subagents
+- A single session entrypoint (`BOOT.md`)
+- Recovery, locking, active context, quality gates, and Jira/GitHub governance
+- A multi-project structure (`projects/<ProjectName>/...`)
 
 ### ❌ Boba Factory
-- Ce n’est pas un repo applicatif métier
-- Ce n’est pas l’endroit pour stocker les docs/tickets/reports d’un projet spécifique
+- Not a business application repo
+- Not a place to store project-specific specs/tickets/reports
 
-> Les données projet restent dans leurs repos respectifs.
+> Project data should stay in each project’s own repositories.
 
 ---
 
-## Prérequis
+## Requirements
 
-- OpenClaw installé et fonctionnel
-- Git installé
-- Accès réseau à GitHub + Jira
-- Un compte GitHub (PAT recommandé)
-- Un compte Jira (email + API token)
+- OpenClaw installed and running
+- Git installed
+- Network access to GitHub + Jira
+- A GitHub account (PAT recommended)
+- A Jira account (email + API token)
 
-Optionnel mais recommandé:
+Optional but recommended:
 - `gh` (GitHub CLI)
 
 ---
 
 ## Installation
 
-### Option simple (one-liner)
+### Quick install (one-liner)
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/BobaDev-Factory/boba-factory/main/install.sh)
 ```
 
-Le script:
-1. clone/met à jour `boba-factory` dans `~/.openclaw/workspace/boba-factory`
-2. pose les questions de configuration
-3. génère `config/local.env` (local, gitignored)
-4. injecte les métadonnées runtime en haut de `BOOT.md`
-5. ajoute le pointeur Boba Factory dans `~/.openclaw/workspace/AGENTS.md`
-6. initialise les protections git (`.gitignore`, hooks si configurés)
+The installer will:
+1. clone/update `boba-factory` into `~/.openclaw/workspace/boba-factory`
+2. ask for setup values
+3. generate `config/local.env` (local only, gitignored)
+4. inject runtime metadata at the top of `BOOT.md`
+5. inject a Boba Factory pointer block into `~/.openclaw/workspace/AGENTS.md`
+6. initialize baseline git protections (`.gitignore`, hooks when configured)
 
 ---
 
-## Activation dans une session OpenClaw
+## Activation in an OpenClaw session
 
-Dans une nouvelle session, utilise une instruction explicite:
+In a new session, explicitly say:
 
-> `Lis /home/<user>/.openclaw/workspace/boba-factory/BOOT.md et applique-le à la lettre.`
+> `Read /home/<user>/.openclaw/workspace/boba-factory/BOOT.md and apply it strictly.`
 
-Le process demandé dans `BOOT.md` pilote ensuite la reprise:
-- sélection projet
-- chargement de `ACTIVE_CONTEXT`
-- lock projet
-- checks connectivité
-- résumé readiness
+Then the boot process handles:
+- project selection
+- `ACTIVE_CONTEXT` load/init
+- project lock handling
+- connectivity checks
+- readiness summary
 
 ---
 
-## Structure recommandée
+## Recommended structure
 
 ```txt
 ~/.openclaw/workspace/
@@ -76,7 +76,7 @@ Le process demandé dans `BOOT.md` pilote ensuite la reprise:
     BOOT.md
     install.sh
     config/
-      local.env          # local uniquement (gitignored)
+      local.env          # local only (gitignored)
     projects/
       .gitkeep
       <ProjectName>/
@@ -86,14 +86,14 @@ Le process demandé dans `BOOT.md` pilote ensuite la reprise:
           reports/
 ```
 
-- `projects/` est versionné comme dossier, mais son contenu est ignoré
-- `ACTIVE_CONTEXT` et `LOCK` sont **par projet**
+- `projects/` is tracked as a folder, but its content is ignored
+- `ACTIVE_CONTEXT` and `LOCK` are **project-scoped**
 
 ---
 
-## Accès requis (Jira / GitHub)
+## Required access (Jira / GitHub)
 
-Le script stocke ces infos dans `config/local.env`:
+The installer stores these values in `config/local.env`:
 
 - `JIRA_BASE_URL`
 - `JIRA_PROJECT_KEY`
@@ -103,34 +103,35 @@ Le script stocke ces infos dans `config/local.env`:
 - `GITHUB_PAT`
 - `GITHUB_TOKEN_MODE`
 
-> `config/local.env` est gitignored et ne doit jamais être commité.
+> `config/local.env` is gitignored and must never be committed.
 
-### Comment récupérer les accès
+### How to get credentials
 
 #### Jira API token
-1. Aller sur [https://id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
-2. Créer un token API
-3. Utiliser:
-   - `JIRA_EMAIL` = email Atlassian
-   - `JIRA_TOKEN` = token généré
+1. Go to: [https://id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
+2. Create an API token
+3. Use:
+   - `JIRA_EMAIL` = Atlassian account email
+   - `JIRA_TOKEN` = generated token
 
 #### GitHub PAT
-1. Aller sur GitHub → Settings → Developer settings → Personal access tokens
-2. Créer un token (fine-grained ou classic selon ton besoin)
-3. Scopes minimum usuels:
+1. Go to GitHub → Settings → Developer settings → Personal access tokens
+2. Create a token (fine-grained or classic)
+3. Typical minimum scopes:
    - repo read/write
-   - pull requests/issues selon workflow
-4. Utiliser `GITHUB_PAT` dans `config/local.env`
+   - pull requests/issues (depending on workflow)
+4. Set it in `GITHUB_PAT`
 
 ---
 
-## Sécurité
+## Security
 
-- Ne jamais commit `config/local.env`
-- Un hook pre-commit est fourni pour bloquer:
+- Never commit `config/local.env`
+- A pre-commit hook is included to block:
   - `config/local.env`
-  - patterns courants de tokens/secrets
-- Pour vérifier:
+  - common token/secret patterns
+
+Quick checks:
 
 ```bash
 cd ~/.openclaw/workspace/boba-factory
@@ -138,44 +139,44 @@ git status --short
 git ls-files config
 ```
 
-Tu dois voir au maximum `config/.gitkeep` versionné.
+At most, `config/.gitkeep` should be tracked.
 
 ---
 
-## Workflow recommandé (résumé)
+## Recommended workflow (short)
 
-1. Start session + charger `BOOT.md`
-2. Choisir le projet dans `projects/`
-3. Charger contexte + lock projet
-4. Appliquer pipeline:
-   - Spec → Code → Review → Browser/E2E Test → Test → Doc → décision orchestrateur
-5. Mettre à jour reports **projet** (pas framework)
-6. Libérer lock en fin de session
-
----
-
-## Dépannage rapide
-
-### Le one-liner ne marche pas
-- Vérifier connectivité réseau
-- Vérifier que le repo est accessible (public ou auth requise)
-
-### Jira/GitHub KO pendant reprise
-- Vérifier `config/local.env`
-- Vérifier token expiré/révoqué
-- Vérifier URL/key Jira et org GitHub
-
-### Lock bloqué
-- Vérifier `projects/<ProjectName>/.boba/LOCK`
-- appliquer la procédure du runbook `docs/runbooks/SESSION_RECOVERY.md`
+1. Start session + load `BOOT.md`
+2. Select the target project in `projects/`
+3. Load context + acquire project lock
+4. Run pipeline:
+   - Spec → Code → Review → Browser/E2E Test → Test → Doc → orchestrator decision
+5. Update **project** reports (not framework reports)
+6. Release lock at session end
 
 ---
 
-## Philosophie
+## Quick troubleshooting
 
-Boba Factory privilégie:
-- clarté d’exécution,
-- responsabilité explicite par agent,
-- preuve avant affirmation,
-- réduction du bruit et des coûts tokens,
-- séparation stricte framework vs données projet.
+### One-liner install fails
+- Check internet connectivity
+- Check repository visibility/access
+
+### Jira/GitHub checks fail at startup
+- Validate `config/local.env`
+- Check token expiration/revocation
+- Verify Jira URL/key and GitHub org values
+
+### Lock appears stale
+- Inspect `projects/<ProjectName>/.boba/LOCK`
+- Follow `docs/runbooks/SESSION_RECOVERY.md`
+
+---
+
+## Principles
+
+Boba Factory prioritizes:
+- execution clarity,
+- explicit responsibility per agent,
+- evidence before claims,
+- lower token/noise costs,
+- strict separation between framework data and project data.

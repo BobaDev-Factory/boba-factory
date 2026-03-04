@@ -1,4 +1,4 @@
-# BOOT.md — Boba Factory v2 (Session Entrypoint)
+# BOOT.md — Boba Factory v2.1 (Session Entrypoint)
 
 <!-- BOBA_FACTORY:GENERATED:START -->
 - Owner: **BobaMaster**
@@ -9,6 +9,8 @@
 
 Ce fichier est la source unique de process pour les sessions Boba Factory.
 
+Mission Boba Factory : industrialiser la livraison logicielle (spec, code, review, test, doc, CI/CD, runbooks, rollback) avec une discipline multi-agent stricte.
+
 ## Scope du repo
 
 - `boba-factory` contient uniquement le framework/process.
@@ -17,9 +19,6 @@ Ce fichier est la source unique de process pour les sessions Boba Factory.
 ## Convention `projects/`
 
 - `projects/<ProjectName>/` contient les repos git du projet.
-- Exemple:
-  - `projects/Rynade/rynade-backoffice-web`
-  - `projects/Rynade/rynade-core-api`
 - État local par projet (non versionné):
   - `projects/<ProjectName>/.boba/ACTIVE_CONTEXT.json`
   - `projects/<ProjectName>/.boba/LOCK`
@@ -29,10 +28,9 @@ Ce fichier est la source unique de process pour les sessions Boba Factory.
 ## Contrat de reprise S1 → S8 (obligatoire)
 
 ### S1 — Sélection du projet
-Au démarrage de session:
-1. lister les dossiers de `projects/`
-2. demander à l’utilisateur quel projet continuer
-3. basculer le contexte sur `projects/<ProjectName>/`
+1. Lister les dossiers de `projects/`
+2. Demander à l’utilisateur quel projet continuer
+3. Basculer le contexte sur `projects/<ProjectName>/`
 
 ### S2 — Charger le contexte actif projet
 Lire/initialiser `projects/<ProjectName>/.boba/ACTIVE_CONTEXT.json` avec au minimum:
@@ -51,90 +49,119 @@ Clé lock standard:
 
 Règles:
 - lock obligatoire avant action mutante (Jira, code, spawn agent, commit/push)
-- lock stale: demander confirmation utilisateur avant override
+- lock stale: demander confirmation explicite à l’Owner avant override
+- changement de projet: release lock courant avant nouveau lock
 
-### S4 — Charger le contexte documentaire minimal (optimisé)
-Lire les docs Boba Factory nécessaires à l’orchestration:
-
-1. Reports (résumé opérationnel)
+### S4 — Charger le contexte documentaire (reports/process/runbooks)
+Lire les docs nécessaires à l’orchestration:
+1. Reports
    - `docs/reports/STATUS.md` (si présent)
    - `docs/reports/CHANGELOG-OPERATIONS.md` (si présent)
-2. Process (règles d’exécution)
+2. Process
    - `docs/process/MULTI_AGENT_OPERATING_MODEL.md` (si présent)
    - `docs/process/AGENT_DELIVERABLE_CONTRACT.md` (si présent)
    - `docs/process/AGENT_CATALOG.md` (si présent)
-3. Runbooks (procédures)
+3. Runbooks
    - `docs/runbooks/OPENCLAW_BOOTSTRAP.md` (si présent)
 
-Si un fichier est absent: continuer la reprise et le signaler dans le résumé S8.
+Si un fichier est absent: continuer et le signaler en S8.
 
-### S5 — Déclarer pipeline actif
+### S5 — Déclarer pipeline actif + règles
 Pipeline par défaut:
 - `Spec → Code → Review → Browser/E2E Test → Test (lint/unit/typecheck) → Doc → décision orchestrateur`
 
 Règles:
 - 1 agent = 1 mission claire
-- pas de merge direct par sous-agent
-- `Terminé(e)` interdit sans GO explicite humain
+- aucun merge direct par sous-agent
+- orchestrateur = seule autorité d’intégration
+- orchestrateur ne code pas, sauf override explicite de l’Owner
+- échec d’étape (`fail/blocked`) = stop pipeline + diagnostic + next action
 
 ### S6 — Vérifier connectivité (non bloquante)
-Vérifier les accès définis dans `config/local.env`:
-- Jira (`JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL`, `JIRA_TOKEN`)
-- GitHub (`GITHUB_ORG`, `GITHUB_PAT` ou auth `gh`)
+Vérifier les accès de `config/local.env`:
+- Jira: `JIRA_BASE_URL`, `JIRA_PROJECT_KEY`, `JIRA_EMAIL`, `JIRA_TOKEN`
+- GitHub: `GITHUB_ORG`, `GITHUB_PAT` (ou auth gh valide)
 
-La non-connectivité Jira/GitHub ne bloque pas la reprise:
-- marquer l’état `degraded`
-- inclure l’alerte dans le résumé S8
+La non-connectivité n’arrête pas la reprise:
+- marquer `degraded`
+- inclure l’état dans le résumé S7/S8
 
-### S7 — Mini résumé état projet
-Publier un résumé court:
+### S7 — Résumé opérationnel court
+Publier un résumé compact:
 - projet sélectionné
-- `repo/sprint/current_ticket/execution_mode` depuis `ACTIVE_CONTEXT`
-- état Jira rapide (sprint actif + tickets clés: En cours / À tester)
-- état connectivité (Jira/GitHub: OK ou KO)
+- `repo/sprint/current_ticket/execution_mode` (ACTIVE_CONTEXT)
+- Jira rapide: sprint actif + tickets clés (En cours / À tester)
+- connectivité: Jira/GitHub = OK/KO
 
-### S8 — Readiness message
+### S8 — Readiness gate
 Avant toute action projet, publier:
 - mode
 - projet + lock
 - contexte actif
 - prochaine étape
 
-Si un point critique échoue: `blocked` + stop + demander confirmation explicite à l’Owner.
+Si un point critique échoue:
+- `blocked` + stop
+- demander confirmation explicite à l’Owner (nom issu de l’install)
+
+---
+
+## Règles Jira (non négociables)
+
+Transitions obligatoires en cours d’exécution:
+- `En cours` dès démarrage du travail
+- `À tester` au handoff validation
+- `Terminé(e)` uniquement après gates validés + GO explicite Owner
+
+Clôture sprint:
+- interdite sans GO explicite Owner
+
+---
+
+## Contrat livrable agent (obligatoire)
+
+Chaque agent doit renvoyer:
+1. `summary`
+2. `changed_files`
+3. `status` (`pass|fail|blocked`)
+4. `checks` (commandes + résultats)
+5. `next_action`
 
 ---
 
 ## Politique multi-projet
 
-- Une session peut travailler sur plusieurs projets, mais un seul lock actif à la fois.
-- Changement de projet = release lock courant + recharge S1→S8 sur le nouveau projet.
+- Une session peut traiter plusieurs projets, un seul lock actif à la fois.
+- Changement de projet => relancer S1→S8 sur le nouveau projet.
 
-## Catalogue agents (liste complète)
+---
+
+## Catalogue agents (complet)
 
 ### Leadership
 - **Owner (humain)**: autorité produit, validation finale ticket/sprint.
 - **Main agent (orchestrateur)**: coordination, gating, intégration, décision finale.
 
-### Core engineering agents
-- **Atlas**: spec, scope, acceptance criteria, découpage backlog/tickets.
-- **Forge-Backend**: implémentation backend/API/DB/migrations.
-- **Forge-Frontend**: implémentation frontend React/UI.
-- **Sentinel**: review bugs/sécurité/performance/style.
-- **Weaver**: tests navigateurs (Playwright E2E), uniquement `e2e/`.
-- **Pulse**: lint/tests/typecheck/smoke avec commandes reproductibles.
-- **Scribe**: documentation (README/changelog/runbooks).
+### Core engineering
+- **Atlas**: spec/scope/AC
+- **Forge-Backend**: backend/API/DB
+- **Forge-Frontend**: frontend/UI
+- **Sentinel**: review bugs/sécurité/perf/style
+- **Weaver**: tests navigateur E2E (Playwright)
+- **Pulse**: lint/tests/typecheck/smoke
+- **Scribe**: docs/changelog/runbooks
 
-### Extended delivery agents
-- **Helm**: release/ops (CI/CD, checks déploiement, rollback readiness).
-- **Aegis**: sécurité (hardening, secrets, auth/session risk checks).
-- **Quarry**: data/DB (migrations, safety query, rollback-safe DB changes).
+### Extended delivery
+- **Helm**: release/ops
+- **Aegis**: sécurité
+- **Quarry**: data/DB
 
-### Product / business / creative agents
-- **Prism**: product analysis (problème, valeur, KPI).
-- **Mosaic**: UX/UI design (flows, wireframes, design QA).
-- **Quill**: content writer (copy produit/doc/in-app).
-- **Echo**: social media (posts/canaux/calendrier).
-- **Vector**: marketing (positionnement, ICP/personas, GTM).
-- **Radar**: SEO (keywords, briefs SEO, on-page reco).
-- **Beacon**: analytics (tracking plan, funnels, instrumentation KPI).
-- **Bridge**: sales enablement (decks, one-pagers, objection handling).
+### Product / business / creative
+- **Prism**: product analysis
+- **Mosaic**: UX/UI
+- **Quill**: content
+- **Echo**: social
+- **Vector**: marketing
+- **Radar**: SEO
+- **Beacon**: analytics
+- **Bridge**: sales enablement

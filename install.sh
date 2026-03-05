@@ -95,6 +95,7 @@ print_summary() {
   local projects_root="$4"
   local runtime_dir="$5"
   local cron_status="$6"
+  local agent_catalog="$7"
 
   echo
   echo -e "${C_GREEN}${C_BOLD}"
@@ -115,6 +116,7 @@ ASCII
   info "AGENTS pointer: $agents_file"
   info "Projects root:  $projects_root"
   info "Runtime dir:    $runtime_dir"
+  info "Agents catalog: $agent_catalog"
   info "OpenClaw cron:  $cron_status"
 }
 
@@ -181,6 +183,28 @@ ask_yes_no ENABLE_OPENCLAW_CRON "Create OpenClaw cron monitor job for this proje
 ask_secret JIRA_TOKEN "Jira token (optional)"
 ask_secret GITHUB_PAT "GitHub PAT (optional)"
 
+# Full BOOT agent catalog (display names)
+AGENT_OWNER_NAME="$BF_OWNER_NAME"
+AGENT_MAIN_NAME="$BF_MAIN_AGENT_NAME"
+AGENT_ATLAS_NAME="Atlas"
+AGENT_FORGE_BACKEND_NAME="Forge-Backend"
+AGENT_FORGE_FRONTEND_NAME="Forge-Frontend"
+AGENT_SENTINEL_NAME="Sentinel"
+AGENT_WEAVER_NAME="Weaver"
+AGENT_PULSE_NAME="Pulse"
+AGENT_SCRIBE_NAME="Scribe"
+AGENT_HELM_NAME="Helm"
+AGENT_AEGIS_NAME="Aegis"
+AGENT_QUARRY_NAME="Quarry"
+AGENT_PRISM_NAME="Prism"
+AGENT_MOSAIC_NAME="Mosaic"
+AGENT_QUILL_NAME="Quill"
+AGENT_ECHO_NAME="Echo"
+AGENT_VECTOR_NAME="Vector"
+AGENT_RADAR_NAME="Radar"
+AGENT_BEACON_NAME="Beacon"
+AGENT_BRIDGE_NAME="Bridge"
+
 echo
 step "Applying configuration"
 mkdir -p "$WORKSPACE_PATH"
@@ -201,6 +225,26 @@ GITHUB_TOKEN_MODE=$GITHUB_TOKEN_MODE
 WORKSPACE_PATH=$WORKSPACE_PATH
 PROJECT_NAME=$PROJECT_NAME
 CRON_EXPR=$CRON_EXPR
+AGENT_OWNER_NAME=$AGENT_OWNER_NAME
+AGENT_MAIN_NAME=$AGENT_MAIN_NAME
+AGENT_ATLAS_NAME=$AGENT_ATLAS_NAME
+AGENT_FORGE_BACKEND_NAME=$AGENT_FORGE_BACKEND_NAME
+AGENT_FORGE_FRONTEND_NAME=$AGENT_FORGE_FRONTEND_NAME
+AGENT_SENTINEL_NAME=$AGENT_SENTINEL_NAME
+AGENT_WEAVER_NAME=$AGENT_WEAVER_NAME
+AGENT_PULSE_NAME=$AGENT_PULSE_NAME
+AGENT_SCRIBE_NAME=$AGENT_SCRIBE_NAME
+AGENT_HELM_NAME=$AGENT_HELM_NAME
+AGENT_AEGIS_NAME=$AGENT_AEGIS_NAME
+AGENT_QUARRY_NAME=$AGENT_QUARRY_NAME
+AGENT_PRISM_NAME=$AGENT_PRISM_NAME
+AGENT_MOSAIC_NAME=$AGENT_MOSAIC_NAME
+AGENT_QUILL_NAME=$AGENT_QUILL_NAME
+AGENT_ECHO_NAME=$AGENT_ECHO_NAME
+AGENT_VECTOR_NAME=$AGENT_VECTOR_NAME
+AGENT_RADAR_NAME=$AGENT_RADAR_NAME
+AGENT_BEACON_NAME=$AGENT_BEACON_NAME
+AGENT_BRIDGE_NAME=$AGENT_BRIDGE_NAME
 CFG
 chmod 600 "$CONFIG_FILE"
 
@@ -249,6 +293,38 @@ fi
 
 [[ -f "$PROJECT_DIR/.boba/active-tasks.json" ]] || echo '{"tasks":[]}' > "$PROJECT_DIR/.boba/active-tasks.json"
 [[ -f "$PROJECT_DIR/.boba/proposed-tasks.json" ]] || echo '{"tasks":[]}' > "$PROJECT_DIR/.boba/proposed-tasks.json"
+
+AGENT_CATALOG_FILE="$PROJECT_DIR/.boba/agents.catalog.json"
+cat > "$AGENT_CATALOG_FILE" <<JSON
+{
+  "owner": "$AGENT_OWNER_NAME",
+  "main": "$AGENT_MAIN_NAME",
+  "core": [
+    "$AGENT_ATLAS_NAME",
+    "$AGENT_FORGE_BACKEND_NAME",
+    "$AGENT_FORGE_FRONTEND_NAME",
+    "$AGENT_SENTINEL_NAME",
+    "$AGENT_WEAVER_NAME",
+    "$AGENT_PULSE_NAME",
+    "$AGENT_SCRIBE_NAME"
+  ],
+  "extended": [
+    "$AGENT_HELM_NAME",
+    "$AGENT_AEGIS_NAME",
+    "$AGENT_QUARRY_NAME"
+  ],
+  "product": [
+    "$AGENT_PRISM_NAME",
+    "$AGENT_MOSAIC_NAME",
+    "$AGENT_QUILL_NAME",
+    "$AGENT_ECHO_NAME",
+    "$AGENT_VECTOR_NAME",
+    "$AGENT_RADAR_NAME",
+    "$AGENT_BEACON_NAME",
+    "$AGENT_BRIDGE_NAME"
+  ]
+}
+JSON
 
 BOOT_BEGIN="<!-- BOBA_FACTORY:GENERATED:START -->"
 BOOT_END="<!-- BOBA_FACTORY:GENERATED:END -->"
@@ -323,4 +399,4 @@ JSON
   fi
 fi
 
-print_summary "$CONFIG_FILE" "$BOOT_PATH" "$AGENTS_FILE" "$REPO_ROOT/projects" "$PROJECT_DIR/.boba" "$CRON_SETUP_STATUS"
+print_summary "$CONFIG_FILE" "$BOOT_PATH" "$AGENTS_FILE" "$REPO_ROOT/projects" "$PROJECT_DIR/.boba" "$CRON_SETUP_STATUS" "$AGENT_CATALOG_FILE"

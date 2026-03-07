@@ -69,6 +69,7 @@ Lire les docs nécessaires à l'orchestration:
    - `docs/process/AGENT_CATALOG.md` (si présent)
    - `docs/process/QUALITY_GATES.md` (si présent)
    - `docs/process/RUNTIME_AUTOMATION.md` (si présent)
+   - `docs/process/JIRA_GITHUB_CONVENTION.md` (si présent)
 3. Runbooks
    - `docs/runbooks/SESSION_RECOVERY.md` (si présent)
 4. Project light spec (selected project)
